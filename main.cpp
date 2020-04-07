@@ -22,9 +22,6 @@
 #define PCKT_LEN 8192
 #define FLAG_Q 0x0100
 
-#define SOURCE_IP           "192.168.1.181"//"192.168.157.132"
-#define DESTINATION_IP      "8.8.8.8"
-#define SOURCE_PORT         10001
 #define DESTINATION_PORT    53
 
 
@@ -68,7 +65,7 @@ uint16_t check_udp_sum(uint8_t *buffer, int len){
     unsigned long sum=0;
     struct ipheader *tempI=(struct ipheader *)(buffer);
     struct udpheader *tempH=(struct udpheader *)(buffer+sizeof(struct ipheader));
-    struct dnsheader *tempD=(struct dnsheader *)(buffer+sizeof(struct ipheader)+sizeof(struct udpheader));
+
     tempH->udph_chksum=0;
     sum=checksum( (uint16_t *)   &(tempI->iph_sourceip) ,8 );
     sum+=checksum((uint16_t *) tempH,len);
@@ -76,8 +73,8 @@ uint16_t check_udp_sum(uint8_t *buffer, int len){
     sum=(sum>>16)+(sum & 0x0000ffff);
     sum+=(sum>>16);
     return (~sum);
-
 }
+
 unsigned short csum(unsigned short *buf, int nwords){
     unsigned long sum;
     for(sum=0; nwords>0; nwords--)
@@ -99,16 +96,15 @@ int main(int argc, char *argv[])
 
     int sd;
     char buffer[PCKT_LEN];
-    memset(buffer, 0, PCKT_LEN);  //sets the buffer to 0 for all bytes
+    memset(buffer, 0, PCKT_LEN);
     struct ipheader *ip = (struct ipheader *) buffer;
     struct udpheader *udp = (struct udpheader *) (buffer + sizeof(struct ipheader));
     struct dnsheader *dns=(struct dnsheader*) (buffer +sizeof(struct ipheader)+sizeof(struct udpheader));
     char *data=(buffer +sizeof(struct ipheader)+sizeof(struct udpheader)+sizeof(struct dnsheader));
 
-    // dns field  aka. UDP payload field
     dns->flags   = htons(FLAG_Q);
-    dns->QDCOUNT = htons(1); //1 query
-    dns->query_id=0xE570; // transaction ID for the query packet
+    dns->QDCOUNT = htons(1);
+    dns->query_id=0xE570; // transaction id for 0845168 Alexander Kjeldsen
 
     strcpy(data,"\3www\6google\3com");
     int length = strlen(data);
@@ -127,25 +123,30 @@ int main(int argc, char *argv[])
     struct sockaddr_in sin;
     int one = 1;
     const int *val = &one;
+
     // Create a raw socket with UDP protocol
     sd = socket(PF_INET, SOCK_RAW, IPPROTO_UDP);
+
     if(sd<0 )printf("socket error\n");
     sin.sin_family      = AF_INET;
     sin.sin_port        = htons(53);
-    sin.sin_addr.s_addr = inet_addr(DESTINATION_IP);
+    sin.sin_addr.s_addr = inet_addr(argv[3]);
+    //ip
     ip->iph_ihl         = 5;
     ip->iph_ver         = 4;
     ip->iph_tos         = 0; // Low delay
-    unsigned short int packetLength =(sizeof(struct ipheader) + sizeof(struct udpheader)+sizeof(struct dnsheader)+length); // length + dataEnd_size == UDP_payload_size
+    unsigned short int packetLength =(sizeof(struct ipheader) + sizeof(struct udpheader)+sizeof(struct dnsheader)+length);
     ip->iph_len         = htons(packetLength);
     ip->iph_ident       = htons(0xE4CA);
     ip->iph_ttl         = 64; // hops
     ip->iph_protocol    = 17; // UDP
     ip->iph_sourceip    = inet_addr(argv[1]);
     ip->iph_destip      = inet_addr(argv[3]);
+    //putting ports in udp
     udp->udph_srcport   = htons(atoi(argv[2]));
     udp->udph_destport  = htons(DESTINATION_PORT);
     udp->udph_len       = htons(sizeof(struct udpheader)+sizeof(struct dnsheader)+length);
+    //checksum for ip and udp
     ip->iph_chksum      = csum((unsigned short *)buffer, sizeof(struct ipheader) + sizeof(struct udpheader));
     udp->udph_chksum    = check_udp_sum((unsigned char*)&buffer, packetLength-sizeof(struct ipheader));
 
