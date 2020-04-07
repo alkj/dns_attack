@@ -168,9 +168,6 @@ int main(int argc, char *argv[])
             printf(" : %d ", ntohs(udp->udph_srcport));
             printf("\t -> \t destination : %s", destinationIpString);
             printf(" : %d\n", htons(sin.sin_port));
-
-
-
         }
     }
     close(sd);
