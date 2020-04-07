@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     // dns field  aka. UDP payload field
     dns->flags   = htons(FLAG_Q);
     dns->QDCOUNT = htons(1); //1 query
-    dns->query_id=0xCAE4; // transaction ID for the query packet
+    dns->query_id=0xE570; // transaction ID for the query packet
 
     strcpy(data,"\3www\6google\3com");
     int length = strlen(data);
